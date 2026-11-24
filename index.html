@@ -853,7 +853,13 @@ const store = {
 
 const state = {
   mode: store.get("mode", "tekli") === "toptan" ? "toptan" : "tekli",
-  cart: (store.get("cart", []) || []).filter(l => l && byId(l.id) && l.qty > 0),
+  cart: (store.get("cart", []) || []).filter(l => {
+    const p = l && byId(l.id);
+    if (!p || !(l.qty > 0) || !CONFIG.sizes.includes(l.size)) return false;
+    if (l.color != null && !(p.colors || []).some(c => c[0] === l.color)) return false;
+    l.qty = Math.min(999, Math.floor(l.qty));
+    return true;
+  }),
   cat: "all",
   q: "",
   step: "cart"
@@ -1103,7 +1109,7 @@ function renderCart() {
         return `<div class="cl"><img src="assets/${g.p.img}.webp" alt="" width="72" height="90" loading="lazy">
           <div><div class="cl-t"><b>${esc(g.p.name)}</b><button data-rmg="${esc(g.key)}" aria-label="${esc(g.p.name)} sepetten çıkar">${ico("trash")}</button></div>
           <small>${g.color ? "Renk: " + esc(g.color) + " · " : ""}${fmt(u)} / adet</small>
-          <div class="cg-s">${g.lines.map(({ l, i }) => `<div class="cs"><b>${l.size}</b><div class="stepper sm" aria-label="${l.size} adet"><button data-cq="${i}" data-v="-1" aria-label="${l.size} azalt">${ico("minus")}</button><output class="num">${l.qty}</output><button data-cq="${i}" data-v="1" aria-label="${l.size} arttır">${ico("plus")}</button></div></div>`).join("")}</div>
+          <div class="cg-s">${g.lines.map(({ l, i }) => { const sz = esc(l.size); return `<div class="cs"><b>${sz}</b><div class="stepper sm" aria-label="${sz} adet"><button data-cq="${i}" data-v="-1" aria-label="${sz} azalt">${ico("minus")}</button><output class="num">${l.qty}</output><button data-cq="${i}" data-v="1" aria-label="${sz} arttır">${ico("plus")}</button></div></div>`; }).join("")}</div>
           <div class="cl-b"><small>${n} adet</small><b>${fmt(n * u)}</b></div></div></div>`;
       }).join("");
     foot.innerHTML = `<div class="tot"><div><span>Toplam adet</span><b class="num">${qty}</b></div><div><span>Kargo</span><span>Sipariş onayında bildirilir</span></div>
